@@ -1,5 +1,5 @@
-ID:1042927
-KEY:71fb76e499353dd0aeced1dd30fdd0b48dd3055b7438de108c0baa3c4e01bd3a
-DeviceName: /dev/ttyAMA0
-BaudRate: 230400
+ID: 
+KEY: 
+DeviceName: 
+BaudRate: 
 Version: versionM100_31
