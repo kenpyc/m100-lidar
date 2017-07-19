@@ -2,4 +2,6 @@
 Lidar for the DJI Matrice 100.
 
 ## Compilation and running
-Run `g++ main.cpp -L. -lrplidar_sdk -pthread && sudo ./a.out` from the `test` directory.
+Run 'make' from Onboard-sdk/build directory.
+In Onboard-sdk/build/bin, run './djiosdk-linux-sample -interactive'.
+After having lifted off, press z for obstacle avoidance.
