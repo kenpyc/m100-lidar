@@ -11,7 +11,7 @@ if (COVERAGE)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
 endif ()
 
-include_directories(../../../sample/Linux/Blocking/inc)
+include_directories(/inc)
 include_directories(../../../osdk-core/inc)
 include_directories(../../../osdk-wrapper/inc)
 include_directories(../../../platform/linux/inc)
