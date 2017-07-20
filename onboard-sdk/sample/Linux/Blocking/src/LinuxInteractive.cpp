@@ -11,22 +11,8 @@
  * */
 
 #include "LinuxInteractive.h"
-#include "rplidar.h"
-#include "rplidar_driver.h"
-#include <signal.h>
-#include <stdlib.h>
-
-#ifndef _countof
-#define _countof(_Array) (int)(sizeof(_Array) / sizeof(_Array[0]))
-#endif
 
 using namespace std;
-using namespace rp::standalone::rplidar;
-
-const int BATCH_SIZE = 8;
-RPlidarDriver * drv;
-
-bool userExitCommand;
 
 char userInput()
 {
@@ -94,19 +80,9 @@ char userInput()
   return inputChar;
 }
 
-void end (int)
-{
-	drv->stop();
-	drv->stopMotor();
-	RPlidarDriver::DisposeDriver(drv);
-
-	userExitCommand = true;
-}
-
-
 void interactiveSpin(CoreAPI* api, Flight* flight, WayPoint* waypointObj, Camera* camera, std::string pathToSpiral, std::string paramTuningFile)
 {
-  userExitCommand = false;
+  bool userExitCommand = false;
 
   ackReturnData takeControlStatus;
   ackReturnData releaseControlStatus;
@@ -159,7 +135,6 @@ void interactiveSpin(CoreAPI* api, Flight* flight, WayPoint* waypointObj, Camera
   while (!userExitCommand)
   {
     char getUserInput = userInput();
-	char blahblah;
     switch (getUserInput)
     {
       case 'a':
@@ -184,67 +159,7 @@ void interactiveSpin(CoreAPI* api, Flight* flight, WayPoint* waypointObj, Camera
         drawSqrPosCtrlStatus = drawSqrPosCtrlSample(api, flight);
         break;
       case 'z':
-	blahblah = RPlidarDriver::DRIVER_TYPE_SERIALPORT;
-	drv = RPlidarDriver::CreateDriver();
-
-	if (IS_FAIL(drv->connect("/dev/ttyUSB0", 115200))) {
-		printf("Error, can't connect on that port.\n");
-		exit(0);
-	}
-	
-	signal(SIGINT, end);
-
-	// Start spinning and scanning
-	drv->startMotor();
-	drv->startScan();
-
-	// Start loop to get and print data
-	while (!userExitCommand) {
-		// Make array of measurements
-		rplidar_response_measurement_node_t nodes[360];
-		size_t count = _countof(nodes);
-
-		// grab a 360 degree batch of data (IS_OK returns true if the operation worked)
-		if (IS_OK(drv->grabScanData(nodes, count))) {
-
-			// sort by angle
-			drv->ascendScanData(nodes, count);
-
-			// clear the console
-			system("clear");
-
-			// loop through and print angle, dist
-			for (int i = 0; i < (int) count; i += BATCH_SIZE) {
-
-				// Take the average of the batch, ignoring those with low quality
-				float sum = 0;
-				int nodes_summed = 0;
-				for (int j = 0; j < BATCH_SIZE; j++) {
-					if (nodes[i + j].sync_quality > 10) {
-						sum += nodes[i + j].distance_q2 / 4.0f;
-						nodes_summed++;
-					}
-				}
-
-				// variable to store average distance. -1 means bad data
-				float avg_distance = -1;
-
-				if (nodes_summed > 0) {	// don't divide by 0
-					avg_distance = sum / (float) nodes_summed;
-				}
-
-				if (avg_distance > -1 && avg_distance < 1000) {
-					stopStatus = Stop(api, flight);
-				}
-
-				// Print a . for every 25mm
-				for (int j = 0; j < (int) (avg_distance / 25); j++) {
-					printf(".");
-				}
-				printf("\n");
-			}
-		}
-	}
+	stopStatus = Stop(api, flight);
 	break;
       case 'h':
         landingStatus = landing(api,flight);
