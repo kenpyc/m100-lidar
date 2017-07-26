@@ -159,6 +159,20 @@ void interactiveSpin(CoreAPI* api, Flight* flight, WayPoint* waypointObj, Camera
         drawSqrPosCtrlStatus = drawSqrPosCtrlSample(api, flight);
         break;
       case 'z':
+        releaseControlStatus = releaseControl(api);
+ 
+        drv = RPlidarDriver::CreateDriver();
+
+        if (IS_FAIL(drv->connect("/dev/ttyUSB0", 115200))) {
+                printf("Error, can't connect on that port.\n");
+                exit(0);
+        }
+ 
+        signal(SIGINT, end);
+ 
+        // Start spinning and scanning
+        drv->startMotor();
+        drv->startScan();
 	hasStopped = false; 
 	// Start loop to get and print data
 	while (!userExitCommand) {
