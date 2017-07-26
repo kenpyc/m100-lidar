@@ -159,7 +159,66 @@ void interactiveSpin(CoreAPI* api, Flight* flight, WayPoint* waypointObj, Camera
         drawSqrPosCtrlStatus = drawSqrPosCtrlSample(api, flight);
         break;
       case 'z':
-	stopStatus = Stop(api, flight);
+	hasStopped = false; 
+	// Start loop to get and print data
+	while (!userExitCommand) {
+		// Make array of measurements
+		rplidar_response_measurement_node_t nodes[360];
+		size_t count = _countof(nodes);
+
+		// grab a 360 degree batch of data (IS_OK returns true if the operation worked)
+		if (IS_OK(drv->grabScanData(nodes, count))) {
+
+			// sort by angle 
+			drv->ascendScanData(nodes, count);
+
+			clear = true;
+			nearest = 10000; 
+			// loop through and print angle, dist
+			for (int i = 0; i < (int) count; i += BATCH_SIZE) {
+
+				// Take the average of the batch, ignoring those with low quality
+				float sum = 0; 
+				int nodes_summed = 0;
+				for (int j = 0; j < BATCH_SIZE; j++) {
+					if (nodes[i + j].sync_quality > 10) {
+						sum += nodes[i + j].distance_q2 / 4.0f;
+						nodes_summed++;
+					}        
+				}        
+
+				// variable to store average distance. -1 means bad data 
+				float avg_distance = -1;
+
+				if (nodes_summed > 0) { // don't divide by 0
+					avg_distance = sum / (float) nodes_summed;
+				}        
+
+				if (avg_distance > -1 && avg_distance < nearest) {
+					nearest = avg_distance;
+				}        
+
+				if (avg_distance > -1 && avg_distance < 1000) {
+					clear = false; 
+				}        
+			}        
+			printf(clear ? "clear" : "not clear"); 
+			printf("%i\n", nearest);
+			if (!clear && !hasStopped) {
+				printf("Approaching obstacle. Stopping.\n");
+				takeControlStatus = takeControl(api);
+				stopStatus = Stop(api, flight); 
+				hasStopped = true;
+				usleep(3000);
+				releaseControlStatus = releaseControl(api);
+			}        
+			if (clear && hasStopped) {
+				hasStopped = false; 
+				printf("clear of all obstacles\n");
+			}        
+			usleep(100);
+		}        
+	}        
 	break;
       case 'h':
         landingStatus = landing(api,flight);
